@@ -18,6 +18,7 @@
 #include <vector>
 #include <mutex>
 #include <fstream>
+#include <string_view>
 
 #include "Parse.h"
 
@@ -81,15 +82,21 @@ static void handleClient(SOCKET clientSocket) {
 
 		// Process complete lines from recvBuffer.
 		size_t lineEnd;
+
+		size_t pos = 0;
+
 		//int count = 1;
-		while ((lineEnd = recvBuffer.find('\n')) != string::npos) {
-			string line = recvBuffer.substr(0, lineEnd);
-			recvBuffer.erase(0, lineEnd + 1);
+		while ((lineEnd = recvBuffer.find('\n', pos)) != string::npos) {
+			// Create a string_view to avoid a full copy
+			string_view lineView(recvBuffer.data() + pos, lineEnd - pos);
+			// Process the line (if a std::string is needed, construct it once):
+			string line(lineView);
 
 			// Trim the line before checking if it's empty
-
-			if (trim(line).empty())
+			if (trim(line).empty()) {
+				pos = lineEnd + 1;
 				continue;
+			}
 
 			//if (count == 1) {
 			//	TelemetryDataPoint firstDataPoint;
@@ -101,7 +108,6 @@ static void handleClient(SOCKET clientSocket) {
 			//	}
 			//	count++;
 			//}
-
 
 			TelemetryDataPoint dataPoint;
 
@@ -154,7 +160,11 @@ static void handleClient(SOCKET clientSocket) {
 			// Update the last received reading.
 			flight.lastTime = currentTime;
 			flight.lastFuel = currentFuel;
+
+			pos = lineEnd + 1;
 		}
+		// Erase processed characters in one go.
+		recvBuffer.erase(0, pos);
 	}
 
 	// When the connection ends, calculate the flight's average fuel consumption.
@@ -182,7 +192,6 @@ static void handleClient(SOCKET clientSocket) {
 			cerr << "Error: Unable to open flight_consumption.txt for writing." << endl;
 		}
 	}
-
 	closesocket(clientSocket);
 }
 

@@ -94,14 +94,17 @@ static void sendTelemetryData(SOCKET& clientSocket, const string& fileName) {
 //////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[]) {
 	// If no arguments given, use default telemetry data filename.
-	string fileName = (argc < 2) ? DEFAULT_FILENAME : argv[1];
+	//string fileName = (argc < 2) ? DEFAULT_FILENAME : argv[1];
+
+	// Take server IP address as a CLI argument, if one is provided
+	const char* server_ip_address = (argc < 2) ? SERVER_IP_ADDRESS : argv[1];
 
 	// Initialize random seed
 	srand((unsigned int)time(NULL));
 
 	startWinsock();
 	SOCKET clientSocket = initializeClientSocket();
-	connectToServer(clientSocket, SERVER_IP_ADDRESS, SERVER_PORT);
+	connectToServer(clientSocket, server_ip_address, SERVER_PORT);
 
 	// Generate a unique ID (for example, using a random number)
 	stringstream ss;
@@ -116,7 +119,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	// Now send telemetry data
-	sendTelemetryData(clientSocket, fileName);
+	sendTelemetryData(clientSocket, DEFAULT_FILENAME);
 
 	// Clean up
 	closesocket(clientSocket);
